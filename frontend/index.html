@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ms" data-lang="ms">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UbatJelas — Faham Label Ubat Anda</title>
+<meta name="description" content="UbatJelas helps you understand your prescription in simple, clear language." />
+<style>
+  /* ── Design tokens (matches sample_ui.html palette) ─────────────────────── */
+  :root {
+    --primary:        #1a56db;
+    --primary-hover:  #1447b8;
+    --primary-light:  #ebf2ff;
+    --accent:         #2563eb;
+    --warning-bg:     #fef3c7;
+    --warning-text:   #78350f;
+    --warning-border: #d97706;
+    --danger:         #dc2626;
+    --danger-bg:      #fee2e2;
+    --danger-border:  #dc2626;
+
+    --bg:             #f0f4ff;
+    --surface:        #ffffff;
+    --surface-2:      #f8faff;
+    --surface-3:      #eef2ff;
+    --border:         #c7d7f5;
+    --border-focus:   #1a56db;
+    --text:           #0f172a;
+    --text-muted:     #475569;
+    --text-light:     #94a3b8;
+
+    --radius:         16px;
+    --radius-sm:      10px;
+    --radius-xs:      6px;
+    --card-shadow:    0 2px 12px rgba(26,86,219,.12);
+
+    /* Elderly-friendly base sizing: larger than typical web defaults */
+    --font-size-base: 19px;
+    --line-height:    1.65;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { font-size: var(--font-size-base); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: var(--line-height);
+  }
+
+  .skip-link {
+    position: absolute; top: -100px; left: 16px; background: var(--primary); color: #fff;
+    padding: 10px 18px; border-radius: var(--radius-xs); font-weight: 700; z-index: 999; transition: top .2s;
+  }
+  .skip-link:focus { top: 16px; }
+
+  /* ── Top bar ───────────────────────────────────────────────────────────── */
+  .navbar {
+    background: var(--primary); color: #fff; padding: 0 18px; min-height: 68px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15); position: sticky; top: 0; z-index: 100; padding-top:10px; padding-bottom:10px;
+  }
+  .navbar-brand { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: 800; }
+  .navbar-brand .brand-icon { font-size: 1.7rem; }
+
+  select#langPicker {
+    font-family: inherit; font-size: 1rem; font-weight: 700;
+    border: 2px solid rgba(255,255,255,.5); border-radius: var(--radius-xs);
+    padding: 10px 14px; background: rgba(255,255,255,.15); color: #fff;
+    min-height: 48px; cursor: pointer;
+  }
+  select#langPicker option { color: var(--text); background: #fff; }
+
+  main.app-page { max-width: 760px; margin: 0 auto; padding: 24px 16px 40px; }
+
+  .app-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    border-radius: var(--radius); padding: 26px 24px; color: #fff; margin-bottom: 22px; box-shadow: var(--card-shadow);
+  }
+  .app-header h1 { font-size: 1.6rem; font-weight: 800; margin: 0 0 8px; }
+  .app-header p { margin: 0; font-size: 1rem; opacity: .95; }
+
+  .warning-banner {
+    background: var(--warning-bg); color: var(--warning-text); border: 1.5px solid var(--warning-border);
+    border-radius: var(--radius-sm); padding: 16px 18px; font-size: 1rem; font-weight: 600;
+    display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px;
+  }
+  .warning-banner .w-icon { font-size: 1.3rem; flex-shrink: 0; }
+
+  .error-box {
+    border: 2px solid var(--danger-border); background: var(--danger-bg); color: var(--danger);
+    border-radius: var(--radius-sm); padding: 14px 16px; margin-top: 14px; font-weight: 600;
+  }
+
+  /* ── Cards ─────────────────────────────────────────────────────────────── */
+  .card {
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--card-shadow); padding: 26px 22px; margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 1.15rem; font-weight: 800; color: var(--text); margin: 0 0 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  /* ── Upload zone ───────────────────────────────────────────────────────── */
+  .upload-zone {
+    border: 2.5px dashed var(--border); border-radius: var(--radius-sm); padding: 34px 18px;
+    text-align: center; cursor: pointer; background: var(--surface-3); position: relative;
+    transition: border-color .18s, background .18s;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--primary); background: var(--primary-light); }
+  .upload-zone:focus-within { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(26,86,219,.15); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-zone-icon { font-size: 2.8rem; margin-bottom: 10px; }
+  .upload-zone-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+  .upload-zone-sub { font-size: .95rem; color: var(--text-muted); }
+  .upload-zone-sub span { color: var(--primary); text-decoration: underline; }
+  .file-chosen { margin-top: 12px; font-size: .95rem; color: var(--text-muted); font-weight: 600; }
+
+  button {
+    font-family: inherit; font-weight: 700; font-size: 1.05rem;
+    min-height: 56px; padding: 12px 22px; border-radius: var(--radius-sm);
+    border: none; background: var(--primary); color: #fff; cursor: pointer; width: 100%; margin-top: 16px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background .18s, transform .1s, box-shadow .18s;
+  }
+  button:hover { background: var(--primary-hover); box-shadow: 0 4px 16px rgba(26,86,219,.3); }
+  button:active { transform: scale(.98); }
+  button:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+  button.secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+  button.secondary:hover { background: var(--primary-light); }
+  button.small { width: auto; min-height: 46px; font-size: .95rem; padding: 8px 16px; margin: 0; }
+  button.danger-outline { background: transparent; color: var(--danger); border: 2px solid var(--danger); width: auto; min-height: 46px; padding: 8px 16px; margin: 0; font-size: .95rem; }
+  button.danger-outline:hover { background: var(--danger-bg); }
+
+  .raw-text { white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: .95rem; color: var(--text-muted); background: var(--surface-2); border-radius: var(--radius-xs); padding: 14px; }
+  .decoded-line { margin: 0 0 10px; font-size: 1.1rem; }
+  .decoded-line:last-child { margin-bottom: 0; }
+
+  .inline-warning {
+    margin-top: 16px; margin-bottom: 0; background: var(--warning-bg); color: var(--warning-text);
+    border: 1.5px solid var(--warning-border); border-radius: var(--radius-sm); padding: 14px 16px;
+    display: flex; gap: 10px; align-items: flex-start; font-size: .95rem;
+  }
+
+  /* ── Reminders ─────────────────────────────────────────────────────────── */
+  .reminder-note { color: var(--text-muted); margin-bottom: 14px; font-size: .97rem; }
+  .reminder-row {
+    display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .reminder-row:last-child { border-bottom: none; }
+  .reminder-row .time-field { display: flex; flex-direction: column; gap: 4px; }
+  .reminder-row .time-field label { font-size: .82rem; font-weight: 700; color: var(--text-muted); }
+  .reminder-row input[type="time"] {
+    font-family: inherit; font-size: 1.2rem; font-weight: 700; padding: 10px 12px;
+    border: 2px solid var(--border); border-radius: var(--radius-xs); min-height: 52px; color: var(--text);
+    background: var(--input-bg, #fff);
+  }
+  .reminder-row input[type="time"]:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 4px rgba(26,86,219,.15); }
+  .reminder-label { color: var(--text-muted); font-size: .95rem; flex: 1; min-width: 100px; }
+  .reminder-row-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+
+  .switch { position: relative; width: 56px; height: 32px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: #cbd5e1; border-radius: 30px; cursor: pointer; transition: .2s; }
+  .slider::before {
+    content: ""; position: absolute; height: 24px; width: 24px; left: 4px; top: 4px;
+    background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+  input:checked + .slider { background: var(--primary); }
+  input:checked + .slider::before { transform: translateX(24px); }
+
+  .add-time-row { margin-top: 14px; }
+
+  /* ── Medicine card (sticker) ───────────────────────────────────────────── */
+  .sticker {
+    border: 2px solid var(--primary); border-radius: var(--radius-sm); padding: 20px;
+    background: var(--primary-light);
+  }
+  .sticker h3 { margin: 0 0 4px; font-size: 1.3rem; color: var(--primary); }
+  .sticker .meta { font-size: .85rem; color: var(--text-muted); margin-bottom: 14px; }
+  .sticker dl { margin: 0; }
+  .sticker dt { font-size: .8rem; font-weight: 700; color: var(--text-muted); margin-top: 10px; text-transform: uppercase; letter-spacing: .03em; }
+  .sticker dd { margin: 2px 0 0; font-size: 1.1rem; }
+  .pill-tag {
+    display: inline-block; font-size: .85rem; font-weight: 700; color: var(--primary);
+    background: #fff; border: 1.5px solid var(--primary); border-radius: 20px; padding: 4px 12px; margin-top: 14px;
+  }
+
+  /* ── Footer ────────────────────────────────────────────────────────────── */
+  footer.app-footer {
+    text-align: center; margin-top: 34px; padding-top: 22px; border-top: 1.5px solid var(--border);
+  }
+  footer.app-footer .credit { color: var(--text-muted); font-size: .9rem; margin-bottom: 8px; }
+  footer.app-footer .copyright { color: var(--text-light); font-size: .85rem; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+  @media (max-width: 480px) {
+    .reminder-row { flex-wrap: wrap; }
+    .reminder-row-actions { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<a href="#mainContent" class="skip-link">Skip to content</a>
+
+<header class="navbar">
+  <div class="navbar-brand"><span class="brand-icon">💊</span><span>UbatJelas</span></div>
+  <select id="langPicker" aria-label="Choose language / Pilih bahasa">
+    <option value="ms">Bahasa Malaysia</option>
+    <option value="en">English</option>
+    <option value="ta">தமிழ்</option>
+    <option value="zh">中文</option>
+  </select>
+</header>
+
+<main class="app-page" id="mainContent">
+
+  <div class="app-header">
+    <h1 id="heroTitle"></h1>
+    <p id="heroSubtitle"></p>
+  </div>
+
+  <div class="warning-banner">
+    <span class="w-icon">⚠️</span>
+    <span id="warnMain"></span>
+  </div>
+
+  <div class="card" id="uploadCard">
+    <div class="card-title"><span>📷</span><span id="uploadTitle"></span></div>
+    <label class="upload-zone" id="uploadZone" tabindex="0">
+      <input type="file" id="fileInput" accept="image/jpeg,image/png,application/pdf" />
+      <div class="upload-zone-icon">🖼️</div>
+      <div class="upload-zone-title" id="uploadZoneTitle"></div>
+      <div class="upload-zone-sub" id="uploadZoneSub"></div>
+    </label>
+    <div class="file-chosen" id="fileChosen"></div>
+    <button id="readBtn" type="button"><span>🔍</span><span id="readBtnLabel"></span></button>
+    <div id="uploadError"></div>
+  </div>
+
+  <div class="card" id="extractedCard" style="display:none;">
+    <div class="card-title"><span>📄</span><span id="extractedTitle"></span></div>
+    <div class="raw-text" id="rawTextOut"></div>
+  </div>
+
+  <div class="card" id="decodedCard" style="display:none;">
+    <div class="card-title"><span>✨</span><span id="decodedTitle"></span></div>
+    <div id="decodedOut"></div>
+    <div class="inline-warning">
+      <span>⚠️</span><span id="inlineWarning"></span>
+    </div>
+  </div>
+
+  <div class="card" id="reminderCard" style="display:none;">
+    <div class="card-title"><span>⏰</span><span id="reminderTitle"></span></div>
+    <div class="reminder-note" id="reminderNote"></div>
+    <div id="reminderList"></div>
+    <div class="add-time-row">
+      <button type="button" class="secondary small" id="addManualTime"><span>➕</span><span id="addTimeLabel"></span></button>
+    </div>
+  </div>
+
+  <div class="card" id="cardUbat" style="display:none;">
+    <div class="card-title"><span>💊</span><span id="cardUbatTitle"></span></div>
+    <div class="sticker" id="stickerOut"></div>
+  </div>
+
+  <button class="secondary" id="resetBtn" style="display:none;"><span>🔄</span><span id="resetBtnLabel"></span></button>
+
+  <footer class="app-footer">
+    <div class="credit" id="footerCredit"></div>
+    <div class="copyright"><span>©</span><span id="copyrightText"></span></div>
+  </footer>
+
+</main>
+
+<script>
+const API_URL = "__API_URL_PLACEHOLDER__"; // replaced by the deploy workflow with the live API Gateway URL
+
+/* ── i18n ──────────────────────────────────────────────────────────────── */
+const I18N = {
+  ms: {
+    heroTitle: "Faham label ubat anda, dalam bahasa anda.",
+    heroSubtitle: "Snap gambar mana-mana label ubat farmasi. UbatJelas membaca dan menerangkannya dalam kata-kata mudah — tidak lebih daripada apa yang tercetak.",
+    warnMain: "Sila rujuk ahli farmasi atau doktor anda jika ada sebarang keraguan tentang ubat ini.",
+    uploadTitle: "Foto Ubat",
+    uploadZoneTitle: "Ketik untuk pilih gambar label ubat",
+    uploadZoneSub: "Format: JPG, PNG atau PDF",
+    fileChosenPrefix: "Fail dipilih: ",
+    noFile: "Tiada fail dipilih",
+    readBtn: "Baca Label",
+    readBtnLoading: "Sedang membaca…",
+    errNoFile: "Sila pilih gambar atau PDF dahulu.",
+    errGeneric: "Masalah menghubungi pelayan. Sila cuba lagi.",
+    extractedTitle: "Teks Label Yang Diekstrak",
+    decodedTitle: "Penjelasan Mudah",
+    reminderTitle: "Peringatan Masa",
+    addTimeLabel: "Tambah Masa Lain",
+    removeLabel: "Buang",
+    reminderRowLabel: "Masa peringatan",
+    cardUbatTitle: "Kad Ubat",
+    frequencyLabel: "Kekerapan",
+    durationLabel: "Tempoh",
+    pillTag: "Sila rujuk ahli farmasi jika tidak pasti",
+    resetBtnLabel: "Imbas Label Lain",
+    footerCredit: "Dibina oleh MindSparks — Nilai University",
+    copyrightText: "2026 MindSparks. Hak cipta terpelihara.",
+    notSet: "—",
+    defaultMed: "Ubat Anda"
+  },
+  en: {
+    heroTitle: "Understand your medicine label, in your own language.",
+    heroSubtitle: "Snap a photo of any pharmacy label. UbatJelas reads it and explains it in plain words — nothing more than what's printed.",
+    warnMain: "Please consult your pharmacist or doctor if you have any doubts about this medicine.",
+    uploadTitle: "Photo of Medicine",
+    uploadZoneTitle: "Tap to choose a photo of the label",
+    uploadZoneSub: "Formats: JPG, PNG or PDF",
+    fileChosenPrefix: "File chosen: ",
+    noFile: "No file chosen",
+    readBtn: "Read Label",
+    readBtnLoading: "Reading…",
+    errNoFile: "Please choose a photo or PDF first.",
+    errGeneric: "Something went wrong reaching the server. Please try again.",
+    extractedTitle: "Extracted Label Text",
+    decodedTitle: "Simple Explanation",
+    reminderTitle: "Reminders",
+    addTimeLabel: "Add Another Time",
+    removeLabel: "Remove",
+    reminderRowLabel: "Reminder time",
+    cardUbatTitle: "Medicine Card",
+    frequencyLabel: "Frequency",
+    durationLabel: "Duration",
+    pillTag: "Consult your pharmacist if unsure",
+    resetBtnLabel: "Scan Another Label",
+    footerCredit: "Built by MindSparks — Nilai University",
+    copyrightText: "2026 MindSparks. All rights reserved.",
+    notSet: "—",
+    defaultMed: "Your Medicine"
+  },
+  ta: {
+    heroTitle: "உங்கள் மருந்து லேபிளை, உங்கள் மொழியில் புரிந்து கொள்ளுங்கள்.",
+    heroSubtitle: "மருந்தகச் சீட்டின் புகைப்படத்தை எடுக்கவும். UbatJelas அதைப் படித்து எளிய வார்த்தைகளில் விளக்கும் — அச்சிடப்பட்டதை மட்டுமே.",
+    warnMain: "இந்த மருந்து குறித்து ஏதேனும் சந்தேகம் இருந்தால், மருந்தாளர் அல்லது மருத்துவரை அணுகவும்.",
+    uploadTitle: "மருந்து புகைப்படம்",
+    uploadZoneTitle: "லேபிள் புகைப்படத்தை தேர்ந்தெடுக்க தட்டவும்",
+    uploadZoneSub: "வடிவங்கள்: JPG, PNG அல்லது PDF",
+    fileChosenPrefix: "தேர்ந்தெடுத்த கோப்பு: ",
+    noFile: "கோப்பு எதுவும் தேர்ந்தெடுக்கப்படவில்லை",
+    readBtn: "லேபிளைப் படிக்க",
+    readBtnLoading: "படிக்கிறது…",
+    errNoFile: "முதலில் ஒரு புகைப்படம் அல்லது PDF தேர்ந்தெடுக்கவும்.",
+    errGeneric: "சர்வரை அணுகுவதில் சிக்கல். மீண்டும் முயற்சிக்கவும்.",
+    extractedTitle: "பிரித்தெடுக்கப்பட்ட லேபிள் உரை",
+    decodedTitle: "எளிய விளக்கம்",
+    reminderTitle: "நேர நினைவூட்டல்கள்",
+    addTimeLabel: "மற்றொரு நேரத்தை சேர்க்க",
+    removeLabel: "அகற்று",
+    reminderRowLabel: "நினைவூட்டல் நேரம்",
+    cardUbatTitle: "மருந்து அட்டை",
+    frequencyLabel: "அதிர்வெண்",
+    durationLabel: "காலஅளவு",
+    pillTag: "உறுதி இல்லையெனில் மருந்தாளரிடம் கேளுங்கள்",
+    resetBtnLabel: "மற்றொரு லேபிளை ஸ்கேன் செய்யவும்",
+    footerCredit: "MindSparks ஆல் உருவாக்கப்பட்டது — Nilai University",
+    copyrightText: "2026 MindSparks. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.",
+    notSet: "—",
+    defaultMed: "உங்கள் மருந்து"
+  },
+  zh: {
+    heroTitle: "用您自己的语言，看懂药物标签。",
+    heroSubtitle: "拍下任何药房标签的照片。UbatJelas 会读取并用简单的文字解释——只解释标签上印刷的内容。",
+    warnMain: "如对此药物有任何疑问，请咨询您的药剂师或医生。",
+    uploadTitle: "药物照片",
+    uploadZoneTitle: "点击选择标签照片",
+    uploadZoneSub: "格式：JPG、PNG 或 PDF",
+    fileChosenPrefix: "已选择文件：",
+    noFile: "未选择文件",
+    readBtn: "读取标签",
+    readBtnLoading: "正在读取…",
+    errNoFile: "请先选择照片或 PDF 文件。",
+    errGeneric: "连接服务器时出现问题，请重试。",
+    extractedTitle: "提取的标签文字",
+    decodedTitle: "简明解释",
+    reminderTitle: "服药提醒",
+    addTimeLabel: "添加提醒时间",
+    removeLabel: "移除",
+    reminderRowLabel: "提醒时间",
+    cardUbatTitle: "药物卡片",
+    frequencyLabel: "服用频率",
+    durationLabel: "疗程",
+    pillTag: "如有不确定，请咨询药剂师",
+    resetBtnLabel: "扫描另一个标签",
+    footerCredit: "由 MindSparks 制作 — Nilai University",
+    copyrightText: "2026 MindSparks 版权所有。",
+    notSet: "—",
+    defaultMed: "您的药物"
+  }
+};
+
+/* ── Pharmacy frequency-code translations ─────────────────────────────────
+   frequency_code from the backend is raw Latin/pharmacy shorthand (e.g.
+   "BD", "TDS") meant for scheduling logic — not something an elderly user
+   should have to decode on the Medicine Card. Map common codes to plain
+   language per selected UI language. Codes not in this list fall back to
+   showing the raw code as-is (safer than guessing). */
+const FREQUENCY_TRANSLATIONS = {
+  OD:    { ms: "Sekali sehari",     en: "Once a day",       ta: "நாளொன்றுக்கு ஒருமுறை", zh: "每天一次" },
+  BD:    { ms: "Dua kali sehari",   en: "Twice a day",      ta: "நாளொன்றுக்கு இரண்டு முறை", zh: "每天两次" },
+  TDS:   { ms: "Tiga kali sehari",  en: "Three times a day", ta: "நாளொன்றுக்கு மூன்று முறை", zh: "每天三次" },
+  QDS:   { ms: "Empat kali sehari", en: "Four times a day", ta: "நாளொன்றுக்கு நான்கு முறை", zh: "每天四次" },
+  PRN:   { ms: "Bila perlu",        en: "As needed",        ta: "தேவைப்படும்போது", zh: "需要时服用" },
+  STAT:  { ms: "Serta-merta",       en: "Immediately",      ta: "உடனடியாக", zh: "立即服用" },
+  NOCTE: { ms: "Setiap malam",      en: "Every night",      ta: "ஒவ்வொரு இரவும்", zh: "每晚一次" },
+  MANE:  { ms: "Setiap pagi",       en: "Every morning",    ta: "ஒவ்வொரு காலையும்", zh: "每天早上" },
+  HS:    { ms: "Sebelum tidur",     en: "At bedtime",       ta: "படுக்கைக்குச் செல்லும் முன்", zh: "睡前服用" }
+};
+
+function translateFrequency(code) {
+  if (!code) return null;
+  const entry = FREQUENCY_TRANSLATIONS[code.trim().toUpperCase()];
+  return entry ? entry[lang()] : code; // unknown code: show as-is rather than guess
+}
+
+const el = (id) => document.getElementById(id);
+let state = { rawText: "", frequencyCode: null, mealRelation: null, medicineName: null, duration: null };
+let activeReminders = []; // [{time, label, on}]
+let lastFiredMinute = {};
+let alarmTimer = null;
+
+function lang() { return el('langPicker').value; }
+function t(key) { return I18N[lang()][key]; }
+
+function applyLanguage() {
+  const L = I18N[lang()];
+  document.documentElement.lang = lang();
+  document.documentElement.setAttribute('data-lang', lang());
+
+  el('heroTitle').textContent = L.heroTitle;
+  el('heroSubtitle').textContent = L.heroSubtitle;
+  el('warnMain').textContent = L.warnMain;
+  el('uploadTitle').textContent = L.uploadTitle;
+  el('uploadZoneTitle').textContent = L.uploadZoneTitle;
+  el('uploadZoneSub').textContent = L.uploadZoneSub;
+  el('readBtnLabel').textContent = L.readBtn;
+  el('extractedTitle').textContent = L.extractedTitle;
+  el('decodedTitle').textContent = L.decodedTitle;
+  el('reminderTitle').textContent = L.reminderTitle;
+  el('addTimeLabel').textContent = L.addTimeLabel;
+  el('cardUbatTitle').textContent = L.cardUbatTitle;
+  el('resetBtnLabel').textContent = L.resetBtnLabel;
+  el('footerCredit').textContent = L.footerCredit;
+  el('copyrightText').textContent = L.copyrightText;
+
+  const fileName = el('fileInput').files[0]?.name;
+  el('fileChosen').textContent = fileName ? (L.fileChosenPrefix + fileName) : "";
+
+  renderReminderList();
+  if (state.medicineName !== undefined && el('cardUbat').style.display !== 'none') renderCardUbat();
+}
+
+el('langPicker').addEventListener('change', applyLanguage);
+applyLanguage();
+
+function setLoading(btn, loading) {
+  btn.disabled = loading;
+  el('readBtnLabel').textContent = loading ? t('readBtnLoading') : t('readBtn');
+}
+
+el('fileInput').addEventListener('change', () => {
+  const f = el('fileInput').files[0];
+  el('fileChosen').textContent = f ? (t('fileChosenPrefix') + f.name) : "";
+});
+
+const uploadZone = el('uploadZone');
+uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) {
+    el('fileInput').files = e.dataTransfer.files;
+    el('fileChosen').textContent = t('fileChosenPrefix') + e.dataTransfer.files[0].name;
+  }
+});
+
+el('readBtn').addEventListener('click', async () => {
+  const file = el('fileInput').files[0];
+  el('uploadError').innerHTML = "";
+  if (!file) {
+    el('uploadError').innerHTML = `<div class="error-box">${t('errNoFile')}</div>`;
+    return;
+  }
+  const btn = el('readBtn');
+  setLoading(btn, true);
+
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('session_language', lang());
+
+    const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: form });
+    const data = await res.json();
+
+    if (!data.passed_confidence_check) {
+      el('uploadError').innerHTML = `<div class="error-box">${data.message || t('errGeneric')}</div>`;
+      setLoading(btn, false);
+      return;
+    }
+
+    state.rawText = data.raw_text;
+    el('rawTextOut').textContent = data.raw_text;
+    el('extractedCard').style.display = 'block';
+
+    await runTranslate();
+  } catch (e) {
+    el('uploadError').innerHTML = `<div class="error-box">${t('errGeneric')}</div>`;
+  } finally {
+    setLoading(btn, false);
+  }
+});
+
+async function runTranslate() {
+  const res = await fetch(`${API_URL}/translate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw_text: state.rawText, session_language: lang() })
+  });
+  const data = await res.json();
+
+  state.frequencyCode = data.frequency_code;
+  state.mealRelation = data.meal_relation;
+  state.medicineName = data.medicine_name;
+  state.duration = data.duration;
+
+  el('decodedOut').innerHTML = data.translated_text.split('\n').map(line => line.trim() ? `<p class="decoded-line">${line}</p>` : '').join('');
+  el('inlineWarning').textContent = data.warning_text;
+  el('decodedCard').style.display = 'block';
+
+  await runReminder();
+  renderCardUbat();
+  el('resetBtn').style.display = 'block';
+}
+
+async function runReminder(manualTimes) {
+  const res = await fetch(`${API_URL}/reminder`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      frequency_code: state.frequencyCode,
+      meal_relation: state.mealRelation,
+      manual_times: manualTimes || null,
+      session_language: lang()
+    })
+  });
+  const data = await res.json();
+  el('reminderCard').style.display = 'block';
+  el('reminderNote').textContent = data.note || "";
+
+  activeReminders = data.proposed_times.map(p => ({ time: p.time, label: p.label, on: false }));
+  if (activeReminders.length === 0) activeReminders.push({ time: "08:00", label: "", on: false });
+  renderReminderList();
+}
+
+function renderReminderList() {
+  const list = el('reminderList');
+  list.innerHTML = "";
+  const L = I18N[lang()];
+  activeReminders.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'reminder-row';
+    row.innerHTML = `
+      <div class="time-field">
+        <label for="time-${i}">${L.reminderRowLabel}</label>
+        <input type="time" id="time-${i}" data-idx="${i}" value="${r.time}">
+      </div>
+      <div class="reminder-label">${r.label || ""}</div>
+      <div class="reminder-row-actions">
+        <label class="switch">
+          <input type="checkbox" data-idx="${i}" ${r.on ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+        <button type="button" class="danger-outline remove-time" data-idx="${i}">${L.removeLabel}</button>
+      </div>`;
+    list.appendChild(row);
+  });
+
+  list.querySelectorAll('input[type=time]').forEach(inp => {
+    inp.addEventListener('change', (ev) => {
+      const idx = +ev.target.dataset.idx;
+      activeReminders[idx].time = ev.target.value;
+    });
+  });
+  list.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', async (ev) => {
+      const idx = +ev.target.dataset.idx;
+      activeReminders[idx].on = ev.target.checked;
+      if (ev.target.checked && 'Notification' in window && Notification.permission === 'default') {
+        try { await Notification.requestPermission(); } catch (e) {}
+      }
+      startAlarmLoop();
+    });
+  });
+  list.querySelectorAll('.remove-time').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      const idx = +ev.currentTarget.dataset.idx;
+      activeReminders.splice(idx, 1);
+      renderReminderList();
+    });
+  });
+}
+
+el('addManualTime').addEventListener('click', () => {
+  activeReminders.push({ time: "08:00", label: "", on: false });
+  renderReminderList();
+});
+
+function startAlarmLoop() {
+  if (alarmTimer) return;
+  alarmTimer = setInterval(checkAlarms, 15000);
+  checkAlarms();
+}
+
+function checkAlarms() {
+  const now = new Date();
+  const hhmm = now.toTimeString().slice(0, 5);
+  const minuteKey = now.toISOString().slice(0, 16);
+  activeReminders.forEach(r => {
+    if (r.on && r.time === hhmm && lastFiredMinute[r.time] !== minuteKey) {
+      lastFiredMinute[r.time] = minuteKey;
+      fireReminder(r);
+    }
+  });
+}
+
+function fireReminder(r) {
+  const title = "UbatJelas";
+  const body = `${r.label || ''} — ${r.time}`.trim();
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body });
+  }
+  beep();
+  alert(`⏰ ${title}\n${body}`);
+}
+
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch (e) {}
+}
+
+function renderCardUbat() {
+  const s = state;
+  const L = I18N[lang()];
+  el('stickerOut').innerHTML = `
+    <h3>${s.medicineName || L.defaultMed}</h3>
+    <div class="meta">UbatJelas</div>
+    <dl>
+      <dt>${L.frequencyLabel}</dt><dd>${translateFrequency(s.frequencyCode) || L.notSet} ${s.mealRelation ? '(' + s.mealRelation + ')' : ''}</dd>
+      <dt>${L.durationLabel}</dt><dd>${s.duration || L.notSet}</dd>
+    </dl>
+    <div class="pill-tag">${L.pillTag}</div>
+  `;
+  el('cardUbat').style.display = 'block';
+}
+
+el('resetBtn').addEventListener('click', () => window.location.reload());
+</script>
+</body>
+</html>

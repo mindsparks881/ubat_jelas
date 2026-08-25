@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  UbatJelas — printed pharmacy label translator.
+  Lambda (FastAPI via Mangum) behind an HTTP API, static frontend on S3.
+
+Parameters:
+  BedrockModelId:
+    Type: String
+    Default: global.anthropic.claude-haiku-4-5-20251001-v1:0
+    Description: >
+      Confirm this against Bedrock > Model catalog in your account before
+      deploying — some accounts require a "global." prefix on this ID and
+      some don't. Override at deploy time with --parameter-overrides if so.
+  LlamaCloudApiKey:
+    Type: String
+    NoEcho: true
+    Description: >
+      API key from cloud.llamaindex.ai, used by llamaparse_service.py for
+      OCR. Passed in at deploy time via --parameter-overrides so it never
+      appears in this template or in plaintext CloudFormation history.
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.12
+
+Resources:
+  UbatJelasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/lambda/
+      Handler: lambda_handler.handler
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          CORS_ALLOW_ORIGINS: "*"
+          # Kept well under Lambda's 6MB synchronous payload limit — API
+          # Gateway base64-encodes binary uploads, which adds ~33% overhead,
+          # so a 4MB file becomes ~5.3MB on the wire. Do not raise this
+          # without also raising Lambda's payload handling (e.g. presigned
+          # S3 upload instead of routing the file through Lambda).
+          MAX_FILE_SIZE_MB: "4"
+          MIN_CHARS_THRESHOLD: "20"
+          LLAMA_CLOUD_API_KEY: !Ref LlamaCloudApiKey
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+      Events:
+        ProxyApi:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        RootApi:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-frontend-${AWS::AccountId}"
+      WebsiteConfiguration:
+        IndexDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${FrontendBucket.Arn}/*"
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway base URL
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  FrontendUrl:
+    Description: S3 static website URL
+    Value: !GetAtt FrontendBucket.WebsiteURL
+  FrontendBucketName:
+    Description: S3 bucket name (used by the GitHub Actions workflow to upload index.html)
+    Value: !Ref FrontendBucket
