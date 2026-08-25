@@ -48,26 +48,54 @@ LABELS = {
         "TDS": ["Dos pagi", "Dos tengah hari", "Dos malam"],
         "QID": ["Dos pagi", "Dos tengah hari", "Dos petang", "Dos malam"],
     },
+    "ta": {
+        "OD": ["\u0ba4\u0bbf\u0ba9\u0b9a\u0bb0\u0bbf \u0b9f\u0bcb\u0bb8\u0bcd"],
+        "OM": ["\u0b95\u0bbe\u0bb2\u0bc8 \u0b9f\u0bcb\u0bb8\u0bcd"],
+        "ON": ["\u0b87\u0bb0\u0bb5\u0bc1 \u0b9f\u0bcb\u0bb8\u0bcd"],
+        "BD": ["\u0b95\u0bbe\u0bb2\u0bc8 \u0b9f\u0bcb\u0bb8\u0bcd", "\u0b87\u0bb0\u0bb5\u0bc1 \u0b9f\u0bcb\u0bb8\u0bcd"],
+        "TDS": ["\u0b95\u0bbe\u0bb2\u0bc8 \u0b9f\u0bcb\u0bb8\u0bcd", "\u0bae\u0ba4\u0bbf\u0baf \u0b9f\u0bcb\u0bb8\u0bcd", "\u0b87\u0bb0\u0bb5\u0bc1 \u0b9f\u0bcb\u0bb8\u0bcd"],
+        "QID": ["\u0b95\u0bbe\u0bb2\u0bc8 \u0b9f\u0bcb\u0bb8\u0bcd", "\u0ba8\u0ba3\u0bcd\u0baa\u0b95\u0bb2\u0bcd \u0b9f\u0bcb\u0bb8\u0bcd", "\u0bae\u0bbe\u0bb2\u0bc8 \u0b9f\u0bcb\u0bb8\u0bcd", "\u0b87\u0bb0\u0bb5\u0bc1 \u0b9f\u0bcb\u0bb8\u0bcd"],
+    },
+    "zh": {
+        "OD": ["\u6bcf\u65e5\u5242\u91cf"],
+        "OM": ["\u65e9\u6668\u5242\u91cf"],
+        "ON": ["\u591c\u95f4\u5242\u91cf"],
+        "BD": ["\u65e9\u6668\u5242\u91cf", "\u591c\u95f4\u5242\u91cf"],
+        "TDS": ["\u65e9\u6668\u5242\u91cf", "\u4e2d\u5348\u5242\u91cf", "\u591c\u95f4\u5242\u91cf"],
+        "QID": ["\u65e9\u6668\u5242\u91cf", "\u4e2d\u5348\u5242\u91cf", "\u4e0b\u5348\u5242\u91cf", "\u591c\u95f4\u5242\u91cf"],
+    },
 }
 
 MEAL_DISPLAY = {
     "en": {"breakfast": "Breakfast", "lunch": "Lunch", "dinner": "Dinner"},
     "ms": {"breakfast": "Sarapan", "lunch": "Makan tengah hari", "dinner": "Makan malam"},
+    "ta": {
+        "breakfast": "காலை உணவு",
+        "lunch": "மதிய உணவு",
+        "dinner": "இரவு உணவு",
+    },
+    "zh": {"breakfast": "早餐", "lunch": "午餐", "dinner": "晚餐"},
 }
 
 RELATION_WORD = {
     "en": {"AC": "before", "PC": "after"},
     "ms": {"AC": "sebelum", "PC": "selepas"},
+    "ta": {"AC": "முன்", "PC": "பின்"},
+    "zh": {"AC": "前", "PC": "后"},
 }
 
 MEAL_DOSE_TEMPLATE = {
     "en": "{meal} dose ({relation} food)",
     "ms": "Dos {meal} ({relation} makan)",
+    "ta": "{meal} டோஸ் (உணவுக்கு {relation})",
+    "zh": "{meal}剂量（进食{relation}）",
 }
 
 MANUAL_REMINDER_LABEL = {
     "en": "Reminder {n}",
     "ms": "Peringatan {n}",
+    "ta": "\u0ba8\u0bbf\u0ba9\u0bc8\u0bb5\u0bc2\u0b9f\u0bcd\u0b9f\u0bb2\u0bcd {n}",
+    "zh": "\u63d0\u9192 {n}",
 }
 
 
