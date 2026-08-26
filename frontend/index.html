@@ -202,6 +202,65 @@
     .reminder-row { flex-wrap: wrap; }
     .reminder-row-actions { margin-left: 0; }
   }
+
+  /* ── Help button in navbar ─────────────────────────────────────────────── */
+  #helpBtn {
+    font-family: inherit; font-size: .95rem; font-weight: 700;
+    background: rgba(255,255,255,.18); color: #fff;
+    border: 2px solid rgba(255,255,255,.5); border-radius: var(--radius-xs);
+    padding: 8px 16px; min-height: 48px; cursor: pointer; width: auto; margin: 0;
+    display: flex; align-items: center; gap: 6px; transition: background .18s;
+  }
+  #helpBtn:hover { background: rgba(255,255,255,.32); box-shadow: none; }
+
+  /* ── Guide modal ───────────────────────────────────────────────────────── */
+  .guide-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 500;
+    background: rgba(15,23,42,.55); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  .guide-backdrop.open { display: flex; }
+
+  .guide-modal {
+    background: var(--surface); border-radius: var(--radius); padding: 28px 24px 24px;
+    max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(26,86,219,.22); position: relative;
+  }
+  .guide-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px; gap: 12px;
+  }
+  .guide-modal-title {
+    font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 0;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .guide-close {
+    background: transparent; color: var(--text-muted); border: 2px solid var(--border);
+    border-radius: var(--radius-xs); font-size: 1.1rem; font-weight: 700;
+    width: auto; min-height: 44px; padding: 6px 14px; margin: 0; cursor: pointer; flex-shrink: 0;
+  }
+  .guide-close:hover { background: var(--surface-3); box-shadow: none; }
+
+  .guide-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  .guide-step {
+    display: flex; gap: 16px; align-items: flex-start;
+    background: var(--surface-2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 16px 18px;
+  }
+  .guide-step-num {
+    background: var(--primary); color: #fff; border-radius: 50%;
+    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+    font-size: .95rem; font-weight: 800; flex-shrink: 0; margin-top: 1px;
+  }
+  .guide-step-body { flex: 1; }
+  .guide-step-title { font-size: 1.05rem; font-weight: 800; color: var(--text); margin: 0 0 4px; }
+  .guide-step-desc { font-size: .95rem; color: var(--text-muted); margin: 0; line-height: 1.55; }
+
+  .guide-tip {
+    margin-top: 18px; background: var(--warning-bg); color: var(--warning-text);
+    border: 1.5px solid var(--warning-border); border-radius: var(--radius-sm);
+    padding: 14px 16px; font-size: .95rem; font-weight: 600; display: flex; gap: 10px;
+  }
 </style>
 </head>
 <body>
@@ -209,13 +268,30 @@
 
 <header class="navbar">
   <div class="navbar-brand"><span class="brand-icon">💊</span><span>UbatJelas</span></div>
-  <select id="langPicker" aria-label="Choose language / Pilih bahasa">
-    <option value="ms">Bahasa Malaysia</option>
-    <option value="en">English</option>
-    <option value="ta">தமிழ்</option>
-    <option value="zh">中文</option>
-  </select>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <button id="helpBtn" type="button" aria-haspopup="dialog" aria-controls="guideModal">
+      <span>❓</span><span id="helpBtnLabel"></span>
+    </button>
+    <select id="langPicker" aria-label="Choose language / Pilih bahasa">
+      <option value="ms">Bahasa Malaysia</option>
+      <option value="en">English</option>
+      <option value="ta">தமிழ்</option>
+      <option value="zh">中文</option>
+    </select>
+  </div>
 </header>
+
+<!-- ── User Guide Modal ─────────────────────────────────────────────────── -->
+<div class="guide-backdrop" id="guideBackdrop" role="dialog" aria-modal="true" aria-labelledby="guideModalTitle">
+  <div class="guide-modal" id="guideModal">
+    <div class="guide-modal-header">
+      <h2 class="guide-modal-title" id="guideModalTitle"><span>📖</span><span id="guideTitleText"></span></h2>
+      <button class="guide-close" id="guideCloseBtn" type="button" aria-label="Close guide">✕</button>
+    </div>
+    <ol class="guide-steps" id="guideStepsList"></ol>
+    <div class="guide-tip"><span>⚠️</span><span id="guideTipText"></span></div>
+  </div>
+</div>
 
 <main class="app-page" id="mainContent">
 
@@ -310,7 +386,19 @@ const I18N = {
     footerCredit: "Dibina oleh MindSparks — Nilai University",
     copyrightText: "2026 MindSparks. Hak cipta terpelihara.",
     notSet: "—",
-    defaultMed: "Ubat Anda"
+    defaultMed: "Ubat Anda",
+    helpBtn: "Panduan",
+    guideTitle: "Cara Menggunakan UbatJelas",
+    guideTip: "UbatJelas hanya menerangkan apa yang tercetak pada label anda. Sentiasa sahkan dengan ahli farmasi atau doktor anda jika ada sebarang keraguan.",
+    guideSteps: [
+      { icon: "🌐", title: "Pilih bahasa anda", desc: "Ketik menu di penjuru kanan atas dan pilih Bahasa Malaysia, English, தமிழ் atau 中文. Semua teks dalam aplikasi akan bertukar serta-merta." },
+      { icon: "📷", title: "Muat naik label ubat", desc: "Ketik kawasan bergambar untuk memilih foto label ubat anda (JPG atau PNG) atau fail PDF. Anda juga boleh seret dan lepas fail terus ke dalam kotak tersebut. Pastikan gambar jelas dan teks boleh dibaca." },
+      { icon: "🔍", title: "Baca label", desc: "Ketik butang \"Baca Label\". Aplikasi akan mengimbas teks pada label dan mengekstraknya secara automatik. Ini mengambil masa beberapa saat — sila tunggu." },
+      { icon: "✨", title: "Baca penjelasan mudah", desc: "Teks label anda akan diterangkan dalam bahasa yang mudah difahami — seperti ahli keluarga yang menerangkan kepada anda. Amaran kecil di bawah mengingatkan anda untuk sahkan dengan ahli farmasi jika ada yang tidak jelas." },
+      { icon: "⏰", title: "Tetapkan peringatan ubat", desc: "Aplikasi mencadangkan masa minum ubat berdasarkan arahan pada label (contoh: dua kali sehari = 8:00 pagi & 8:00 malam). Togol suis di sebelah setiap masa untuk menghidupkan peringatan. Anda boleh tukar masa, tambah slot baharu, atau buang yang tidak diperlukan." },
+      { icon: "💊", title: "Lihat Kad Ubat anda", desc: "Ringkasan automatik dipaparkan — nama ubat, kekerapan dos, dan tempoh. Simpan sebagai rujukan pantas." },
+      { icon: "🔄", title: "Imbas label baharu", desc: "Selesai? Ketik butang \"Imbas Label Lain\" di bawah untuk mulakan semula dengan label ubat yang berlainan." }
+    ]
   },
   en: {
     heroTitle: "Understand your medicine label, in your own language.",
@@ -339,7 +427,19 @@ const I18N = {
     footerCredit: "Built by MindSparks — Nilai University",
     copyrightText: "2026 MindSparks. All rights reserved.",
     notSet: "—",
-    defaultMed: "Your Medicine"
+    defaultMed: "Your Medicine",
+    helpBtn: "Guide",
+    guideTitle: "How to Use UbatJelas",
+    guideTip: "UbatJelas only explains what is printed on your label. Always confirm with your pharmacist or doctor if you have any doubts.",
+    guideSteps: [
+      { icon: "🌐", title: "Choose your language", desc: "Tap the menu in the top-right corner and select Bahasa Malaysia, English, தமிழ் or 中文. All text in the app will switch instantly." },
+      { icon: "📷", title: "Upload your label", desc: "Tap the photo area to choose a photo of your pharmacy label (JPG or PNG) or a PDF file. You can also drag and drop the file directly into the box. Make sure the image is clear and the text is readable." },
+      { icon: "🔍", title: "Read the label", desc: "Tap the \"Read Label\" button. The app will scan and extract the text from your label automatically. This takes a few seconds — please wait." },
+      { icon: "✨", title: "Read the simple explanation", desc: "Your label text is explained in plain, everyday language — the way a caring family member would explain it to you. A small warning below reminds you to confirm with your pharmacist if anything is unclear." },
+      { icon: "⏰", title: "Set your medicine reminders", desc: "The app suggests reminder times based on your label's instructions (e.g. twice a day = 8:00 AM & 8:00 PM). Toggle the switch next to each time to turn it on. You can change the time, add new slots, or remove any you don't need." },
+      { icon: "💊", title: "See your Medicine Card", desc: "An automatic summary is shown — medicine name, how often to take it, and for how long. Keep it as a quick reference." },
+      { icon: "🔄", title: "Scan a new label", desc: "Done? Tap the \"Scan Another Label\" button at the bottom to start again with a different medicine label." }
+    ]
   },
   ta: {
     heroTitle: "உங்கள் மருந்து லேபிளை, உங்கள் மொழியில் புரிந்து கொள்ளுங்கள்.",
@@ -368,7 +468,19 @@ const I18N = {
     footerCredit: "MindSparks ஆல் உருவாக்கப்பட்டது — Nilai University",
     copyrightText: "2026 MindSparks. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.",
     notSet: "—",
-    defaultMed: "உங்கள் மருந்து"
+    defaultMed: "உங்கள் மருந்து",
+    helpBtn: "வழிகாட்டி",
+    guideTitle: "UbatJelas பயன்படுத்துவது எப்படி",
+    guideTip: "UbatJelas உங்கள் லேபிளில் அச்சிடப்பட்டதை மட்டுமே விளக்குகிறது. ஏதேனும் சந்தேகம் இருந்தால், எப்போதும் மருந்தாளர் அல்லது மருத்துவரிடம் உறுதிப்படுத்திக் கொள்ளுங்கள்.",
+    guideSteps: [
+      { icon: "🌐", title: "மொழியைத் தேர்ந்தெடுங்கள்", desc: "மேல் வலது மூலையில் உள்ள மெனுவை தட்டி Bahasa Malaysia, English, தமிழ் அல்லது 中文 தேர்ந்தெடுக்கவும். பயன்பாட்டிலுள்ள அனைத்து உரைகளும் உடனடியாக மாறும்." },
+      { icon: "📷", title: "லேபிளை பதிவேற்றவும்", desc: "மருந்தகச் சீட்டின் புகைப்படம் (JPG அல்லது PNG) அல்லது PDF கோப்பை தேர்ந்தெடுக்க புகைப்பட பகுதியை தட்டவும். கோப்பை நேரடியாக பெட்டியில் இழுத்து விடவும் செய்யலாம். படம் தெளிவாகவும் உரை படிக்கக்கூடியதாகவும் இருக்க வேண்டும்." },
+      { icon: "🔍", title: "லேபிளைப் படிக்கவும்", desc: "\"லேபிளைப் படிக்க\" பொத்தானை தட்டவும். பயன்பாடு தானாகவே லேபிளிலிருந்து உரையை ஸ்கேன் செய்து பிரித்தெடுக்கும். இதற்கு சில நொடிகள் ஆகும் — சற்று காத்திருக்கவும்." },
+      { icon: "✨", title: "எளிய விளக்கத்தை படிக்கவும்", desc: "உங்கள் லேபிள் உரை எளிய, அன்றாட வார்த்தைகளில் விளக்கப்படுகிறது — ஒரு அன்பான குடும்பத்தினர் உங்களுக்கு விளக்குவது போல். கீழே உள்ள சிறிய எச்சரிக்கை, ஏதேனும் தெளிவற்றதாக இருந்தால் மருந்தாளரிடம் உறுதிப்படுத்துமாறு நினைவூட்டும்." },
+      { icon: "⏰", title: "மருந்து நினைவூட்டல்களை அமைக்கவும்", desc: "லேபிளின் அறிவுறுத்தல்களின் அடிப்படையில் பயன்பாடு நினைவூட்டல் நேரங்களை பரிந்துரைக்கிறது (எ.கா: நாளொன்றுக்கு இரண்டு முறை = காலை 8:00 & இரவு 8:00). ஒவ்வொரு நேரத்திற்கும் பக்கத்தில் உள்ள சுவிட்சை தட்டி இயக்கவும். நேரத்தை மாற்றலாம், புதிய நேரங்கள் சேர்க்கலாம், அல்லது தேவையற்றவற்றை அகற்றலாம்." },
+      { icon: "💊", title: "மருந்து அட்டையை பாருங்கள்", desc: "தானியங்கி சுருக்கம் காட்டப்படும் — மருந்தின் பெயர், எத்தனை முறை எடுக்கவேண்டும், எத்தனை நாட்கள் என்று. இதை விரைவான குறிப்பாக வைத்திருக்கவும்." },
+      { icon: "🔄", title: "புதிய லேபிளை ஸ்கேன் செய்யவும்", desc: "முடிந்ததா? வேறொரு மருந்து லேபிளுடன் மீண்டும் தொடங்க கீழே உள்ள \"மற்றொரு லேபிளை ஸ்கேன் செய்யவும்\" பொத்தானை தட்டவும்." }
+    ]
   },
   zh: {
     heroTitle: "用您自己的语言，看懂药物标签。",
@@ -397,7 +509,19 @@ const I18N = {
     footerCredit: "由 MindSparks 制作 — Nilai University",
     copyrightText: "2026 MindSparks 版权所有。",
     notSet: "—",
-    defaultMed: "您的药物"
+    defaultMed: "您的药物",
+    helpBtn: "使用指南",
+    guideTitle: "如何使用 UbatJelas",
+    guideTip: "UbatJelas 只解释您标签上印刷的内容。如有任何疑问，请务必向药剂师或医生确认。",
+    guideSteps: [
+      { icon: "🌐", title: "选择您的语言", desc: "点击右上角的菜单，选择 Bahasa Malaysia、English、தமிழ் 或 中文。应用中的所有文字将立即切换。" },
+      { icon: "📷", title: "上传药物标签", desc: "点击照片区域，选择您的药房标签照片（JPG 或 PNG）或 PDF 文件。您也可以直接将文件拖放到框中。请确保图片清晰、文字可辨。" },
+      { icon: "🔍", title: "读取标签", desc: "点击"读取标签"按钮，应用程序将自动扫描并提取标签上的文字。这需要几秒钟——请稍候。" },
+      { icon: "✨", title: "阅读简明解释", desc: "您的标签文字将用简单、日常的语言加以说明——就像关心您的家人向您解释一样。下方的小提示会提醒您，如有不清楚之处，请向药剂师确认。" },
+      { icon: "⏰", title: "设置服药提醒", desc: "应用程序根据标签上的用药说明建议提醒时间（例如：每天两次 = 早上 8:00 和晚上 8:00）。点击每个时间旁的开关将其启用。您可以更改时间、添加新的提醒时段，或删除不需要的提醒。" },
+      { icon: "💊", title: "查看药物卡片", desc: "自动生成的摘要将显示药物名称、服用频率和疗程。可作为快速参考使用。" },
+      { icon: "🔄", title: "扫描新标签", desc: "完成了吗？点击底部的"扫描另一个标签"按钮，重新开始扫描其他药物标签。" }
+    ]
   }
 };
 
@@ -454,12 +578,17 @@ function applyLanguage() {
   el('resetBtnLabel').textContent = L.resetBtnLabel;
   el('footerCredit').textContent = L.footerCredit;
   el('copyrightText').textContent = L.copyrightText;
+  el('helpBtnLabel').textContent = L.helpBtn;
 
   const fileName = el('fileInput').files[0]?.name;
   el('fileChosen').textContent = fileName ? (L.fileChosenPrefix + fileName) : "";
 
   renderReminderList();
   if (state.medicineName !== undefined && el('cardUbat').style.display !== 'none') renderCardUbat();
+
+  // Re-render guide content in the new language (even if modal is closed,
+  // so it's already correct when the user opens it next).
+  renderGuide();
 }
 
 el('langPicker').addEventListener('change', applyLanguage);
@@ -675,6 +804,55 @@ function renderCardUbat() {
 }
 
 el('resetBtn').addEventListener('click', () => window.location.reload());
+
+/* ── User Guide modal ──────────────────────────────────────────────────── */
+function renderGuide() {
+  const L = I18N[lang()];
+  el('guideTitleText').textContent = L.guideTitle;
+  el('guideTipText').textContent = L.guideTip;
+
+  const list = el('guideStepsList');
+  list.innerHTML = "";
+  L.guideSteps.forEach((step, i) => {
+    const li = document.createElement('li');
+    li.className = 'guide-step';
+    li.innerHTML = `
+      <div class="guide-step-num" aria-hidden="true">${i + 1}</div>
+      <div class="guide-step-body">
+        <div class="guide-step-title">${step.icon} ${step.title}</div>
+        <p class="guide-step-desc">${step.desc}</p>
+      </div>`;
+    list.appendChild(li);
+  });
+}
+
+function openGuide() {
+  el('guideBackdrop').classList.add('open');
+  el('guideCloseBtn').focus();
+  document.body.style.overflow = 'hidden'; // prevent background scroll
+}
+
+function closeGuide() {
+  el('guideBackdrop').classList.remove('open');
+  document.body.style.overflow = '';
+  el('helpBtn').focus(); // return focus to trigger button
+}
+
+el('helpBtn').addEventListener('click', openGuide);
+el('guideCloseBtn').addEventListener('click', closeGuide);
+
+// Close on backdrop click (clicking outside the modal panel)
+el('guideBackdrop').addEventListener('click', (e) => {
+  if (e.target === el('guideBackdrop')) closeGuide();
+});
+
+// Close on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && el('guideBackdrop').classList.contains('open')) closeGuide();
+});
+
+// Render once on page load (applyLanguage also calls this, but call here to be safe)
+renderGuide();
 </script>
 </body>
 </html>
