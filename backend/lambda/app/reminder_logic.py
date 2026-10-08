@@ -17,6 +17,17 @@ DEFAULT_TIMES = {
     "QID": ["08:00", "12:00", "16:00", "20:00"],
 }
 
+# Which meal each dose is anchored to. Walking meals in order made BD land on
+# breakfast + lunch; twice-a-day should be breakfast + dinner.
+MEAL_ANCHORS = {
+    "OD": ["breakfast"],
+    "OM": ["breakfast"],
+    "ON": ["dinner"],
+    "BD": ["breakfast", "dinner"],
+    "TDS": ["breakfast", "lunch", "dinner"],
+    "QID": ["breakfast", "lunch", "dinner"],
+}
+
 # Default assumed meal times (editable client-side; PRD Section 11 flags
 # "remember user's mealtimes" as an open/stretch question — MVP uses these
 # fixed defaults).
@@ -130,30 +141,20 @@ def compute_reminders(
         if meal_relation in ("AC", "PC"):
             # Anchor to meal times rather than fixed clock defaults.
             offset = AC_OFFSET_MIN if meal_relation == "AC" else PC_OFFSET_MIN
-            meal_order = ["breakfast", "lunch", "dinner"]
             meal_display = MEAL_DISPLAY[lang]
             relation_word = RELATION_WORD[lang][meal_relation]
             template = MEAL_DOSE_TEMPLATE[lang]
 
-            if frequency_code == "OM":
-                anchor_keys = ["breakfast"]
-            elif frequency_code == "ON":
-                anchor_keys = ["dinner"]
-            else:
-                # BD/TDS/QID/OD: walk meals in order; if there are more doses
-                # than known meals (e.g. QID = 4 doses, 3 meals), pad
-                # remaining slots with the default clock time so no dose
-                # silently disappears.
-                anchor_keys = meal_order[: len(base_times)]
+            # If there are more doses than anchored meals (QID = 4 doses,
+            # 3 meals), the loop pads the rest with default clock times so
+            # no dose silently disappears.
+            anchor_keys = MEAL_ANCHORS[frequency_code]
 
             times = []
             labels = []
             for i in range(len(base_times)):
                 if i < len(anchor_keys):
                     times.append(_shift(DEFAULT_MEAL_TIMES[anchor_keys[i]], offset))
-                    # Label reflects the actual meal it's anchored to, not the
-                    # generic morning/afternoon/evening slot name, so the
-                    # label never contradicts the displayed time.
                     labels.append(
                         template.format(meal=meal_display[anchor_keys[i]], relation=relation_word)
                     )

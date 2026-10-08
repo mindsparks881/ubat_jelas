@@ -23,7 +23,7 @@ Parameters:
 Globals:
   Function:
     Timeout: 30
-    MemorySize: 512
+    MemorySize: 1024
     Runtime: python3.12
 
 Resources:
@@ -44,6 +44,7 @@ Resources:
           MAX_FILE_SIZE_MB: "4"
           MIN_CHARS_THRESHOLD: "20"
           LLAMA_CLOUD_API_KEY: !Ref LlamaCloudApiKey
+          LLAMA_INDEX_CACHE_DIR: /tmp/llama_index
       Policies:
         - Statement:
             - Effect: Allow
